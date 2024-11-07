@@ -12,6 +12,7 @@ export default async function Home() {
 
   if (session?.user) {
     void api.user.getUsers.prefetch();
+    void api.document.getTemplates.prefetch();
   }
 
   return (
