@@ -97,7 +97,7 @@ const documentCreateRequest: pd_api.DocumentCreateRequest = {
     // folderUuid: "YOUR_FOLDER_ID",
     recipients: [
       {
-        email: "taylorjmiller92@gmail.com",
+        email: "taylor@remihq.com",
         firstName: "Taylor",
         lastName: "Miller",
         signingOrder: 1,
@@ -149,9 +149,48 @@ const documentCreateRequest: pd_api.DocumentCreateRequest = {
     });
   }
 
+  async function ensureDocumentCreated(
+    apiInstance: pd_api.DocumentsApi,
+    document: pd_api.DocumentCreateResponse
+  ): Promise<void> {
+    /*
+      Document creation is non-blocking (asynchronous) operation.
+  
+      With a successful request, you receive a response with the created
+      document's ID and status document.uploaded.
+      After processing completes on our servers, usually a few seconds,
+      the document moves to the document.draft status.
+      Please wait for the webhook call or check this document's
+      status before proceeding.
+  
+      The change of status from document.uploaded to another status signifies
+      the document is ready for further processing.
+      Attempting to use a newly created document before PandaDoc servers
+      process it will result in a '404 document not found' response.
+       */
+    // let status = document.status;
+    const MAX_CHECK_RETRIES = 10;
+    let retries = 0;
+  
+    while (retries < MAX_CHECK_RETRIES) {
+      await new Promise((r) => setTimeout(r, 2000));
+      retries++;
+  
+      let response = await apiInstance.statusDocument({
+        id: String(document.id),
+      });
+      if (response.status === "document.draft") {
+        return;
+      }
+    }
+  
+    throw Error("Document was not sent");
+  }
+
   const data = await apiInstance.createDocument({
     documentCreateRequest: documentCreateRequest,
   });
+  await ensureDocumentCreated(apiInstance, data);
   await documentSend(apiInstance, data);
 return data ?? null
   }),
