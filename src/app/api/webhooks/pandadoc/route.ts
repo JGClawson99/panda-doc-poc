@@ -28,7 +28,8 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // TODO: handle the webhook event (use webhook to update your database, etc.)
+        // TODO: Add idempotency check, if the event has already been processed dont process it again
+        // TODO: handle the webhook events (use webhook to update your database, trigger email, ect.)
 
         return NextResponse.json({ message: 'Webhook received' });
     } catch (error) {
