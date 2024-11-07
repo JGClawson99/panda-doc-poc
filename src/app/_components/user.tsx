@@ -1,6 +1,6 @@
 "use client";
 
-import { SetStateAction, useState } from "react";
+import { SetStateAction, useEffect, useState } from "react";
 import Link from "next/link";
 import {
     Table,
@@ -20,21 +20,28 @@ import { Button } from "~/components/ui/button";
 import { DocumentCreateResponse } from "pandadoc-node-client";
 
 export function LatestUser() {
+    const [fetching, setFetching] = useState(false);
     const [templates, setTemplates] = useState<DocumentCreateResponse[]>([]);
   const [users] = api.user.getUsers.useSuspenseQuery();
-  const data = api.document.getTemplates.useQuery(); 
+  const { data, error, isLoading } = api.document.getTemplates.useQuery(
+    undefined, // Pass any parameters if required
+    {
+      enabled: fetching, // Only run the query when `isFetching` is true
+    }
+  );
   console.log(templates)
+
+  useEffect(() => {
+    if (data || error) {
+      setFetching(false); // Reset `isFetching` after query completes
+    }
+  }, [data, error]);
 
   const utils = api.useUtils();
   const router = useRouter()
 
-  const handleClick = async () => {
-    try {
-      const fetchedTemplates = data.data ?? []; // Handle undefined case
-      setTemplates([ ...(Array.isArray(fetchedTemplates) ? fetchedTemplates : [fetchedTemplates])]); // Ensure array
-    } catch (error) {
-      console.error("Error fetching templates:", error);
-    }
+  const handleClick = () => {
+    setFetching(true);
   };
 
 
@@ -58,7 +65,7 @@ export function LatestUser() {
       <TableCell>{user.email}</TableCell>
       <TableCell>{user.phoneNumber}</TableCell>
       <TableCell className="text-right"><Badge>{user.emailVerified ? "Verified" : "Not verified"}</Badge></TableCell>
-      <TableCell className="text-right"><Button onClick={handleClick}>Send</Button></TableCell>
+      <TableCell className="text-right"><Button onClick={() => handleClick()}>Send</Button></TableCell>
     </TableRow>
   ))}
   </TableBody>
