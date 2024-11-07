@@ -18,13 +18,15 @@ import { useRouter } from 'next/navigation'
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { DocumentCreateResponse } from "pandadoc-node-client";
+import { skipToken } from "@tanstack/react-query";
 
 export function LatestUser() {
     const [fetching, setFetching] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<string | null>(null);
     const [templates, setTemplates] = useState<DocumentCreateResponse[]>([]);
   const [users] = api.user.getUsers.useSuspenseQuery();
   const { data, error, isLoading } = api.document.getTemplates.useQuery(
-    undefined, // Pass any parameters if required
+    selectedUser ? { id: selectedUser } : skipToken,
     {
       enabled: fetching, // Only run the query when `isFetching` is true
     }
@@ -40,7 +42,8 @@ export function LatestUser() {
   const utils = api.useUtils();
   const router = useRouter()
 
-  const handleClick = () => {
+  const handleClick = async (userId: string) => {
+    await setSelectedUser(userId);
     setFetching(true);
   };
 
@@ -65,7 +68,7 @@ export function LatestUser() {
       <TableCell>{user.email}</TableCell>
       <TableCell>{user.phoneNumber}</TableCell>
       <TableCell className="text-right"><Badge>{user.emailVerified ? "Verified" : "Not verified"}</Badge></TableCell>
-      <TableCell className="text-right"><Button onClick={() => handleClick()}>Send</Button></TableCell>
+      <TableCell className="text-right"><Button onClick={() => handleClick(user.id)}>Send</Button></TableCell>
     </TableRow>
   ))}
   </TableBody>

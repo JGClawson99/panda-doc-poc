@@ -23,7 +23,9 @@ export const documentRouter = createTRPCRouter({
 
 
 
-  getTemplates: protectedProcedure.query(async ({ ctx }) => {
+  getTemplates: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    const user = await ctx.db.user.findUnique({ where: { id: input.id } });
+    console.log(user)
     const API_KEY = process.env.PANDADOC_API_KEY;
     let cfg = pd_api.createConfiguration({
         authMethods: { apiKey: `API-Key ${API_KEY}` }, // or authMethods: {oauth2: `Bearer ${OAUTH2_KEY}`}
@@ -105,8 +107,24 @@ const documentCreateRequest: pd_api.DocumentCreateRequest = {
     ],
     tokens: [
       {
-        name: "Favorite.Pet",
-        value: "Panda",
+        name: "Sender.FirstName",
+        value: "Taylor",
+      },
+      {
+        name: "Client.FirstName",
+        value: user?.name ?? "",
+      },
+      {
+        name: "Client.Address",
+        value: user?.email ?? "",
+      },
+      {
+        name: "Client.Phone",
+        value: user?.phoneNumber ?? "",
+      },
+      {
+        name: "Invoice.No",
+        value: user?.id ?? "",
       },
     ],
     fields: {},
@@ -115,7 +133,7 @@ const documentCreateRequest: pd_api.DocumentCreateRequest = {
     images: [
       {
         urls: [
-          "https://s3.amazonaws.com/pd-static-content/public-docs/pandadoc-panda-bear.png",
+          user?.image ?? "",
         ],
         name: "Image 1",
       },
